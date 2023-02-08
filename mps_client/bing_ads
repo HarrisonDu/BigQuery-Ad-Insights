@@ -1,0 +1,50 @@
+SELECT
+  DISTINCT campaignname,
+  campaigntype,
+  date,
+  adgroupname,
+  revenue,
+  purchases,
+  SUM(impressions) AS impressions,
+  SUM(clicks*averagecpc) AS click_cost,
+  SUM(clicks)AS clicks,
+  SUM(cost)AS cost
+FROM (
+  WITH
+    a AS(
+    SELECT
+      DISTINCT campaignname,
+      adgroupname,
+      campaigntype,
+      impressions,
+      conversions AS purchases,
+      averagecpc,
+      clicks,
+      revenue,
+      spend AS cost,
+      DATE(timeperiod, 'America/New_York') AS date
+    FROM
+      `stitch-reporting.mps_bing_ads.ad_performance_report`)
+  SELECT
+    DISTINCT
+    CASE
+      WHEN campaignname LIKE '%Brand%' AND campaignname NOT LIKE '%Non Brand%' AND campaignname NOT LIKE '%Non-Brand%' AND campaignname NOT LIKE '%Non_Brand%' THEN 'Brand'
+      WHEN campaignname LIKE '%Non Brand%'
+    OR campaignname LIKE '%Non-Brand%'
+    OR campaignname LIKE '%Non_Brand%' THEN 'Non-Brand'
+    ELSE
+    'Other'
+  END
+    AS Funnel_Stage,
+    *
+  FROM
+    a)
+GROUP BY
+  campaignname,
+  campaigntype,
+  date,
+  adgroupname,
+  revenue,
+  purchases
+ORDER BY
+  date DESC;
